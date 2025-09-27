@@ -83,5 +83,53 @@ def check_user(msg):
     elif msg.from_user.id in muted:
         bot.delete_message(msg.chat.id, msg.message_id)
 
+# словарь: user_id -> prefix
+prefixes = {}
+OWNER_ID = int(os.getenv("OWNER_ID", "123456789"))
+
+def is_admin(user_id):
+    return user_id == OWNER_ID  # для простоты: только владелец
+
+@bot.message_handler(commands=['setprefix'])
+def setprefix(msg):
+    """Команда: /setprefix <префикс> (ответом на сообщение пользователя)"""
+    if not is_admin(msg.from_user.id):
+        return bot.reply_to(msg, "Нет прав.")
+    if not msg.reply_to_message:
+        return bot.reply_to(msg, "Ответьте на сообщение пользователя.")
+    parts = msg.text.split(maxsplit=1)
+    if len(parts) < 2:
+        return bot.reply_to(msg, "Использование: /setprefix <префикс>")
+    prefix = parts[1].strip()
+    user_id = msg.reply_to_message.from_user.id
+    prefixes[user_id] = prefix
+    username = msg.reply_to_message.from_user.username or msg.reply_to_message.from_user.first_name
+    bot.reply_to(msg, f"Для @{username} установлен префикс: {prefix}")
+
+@bot.message_handler(commands=['prefixes'])
+def show_prefixes(msg):
+    """Вывести список всех пользователей с префиксами"""
+    if not prefixes:
+        return bot.reply_to(msg, "Префиксов пока нет.")
+    lines = []
+    for user_id, prefix in prefixes.items():
+        lines.append(f"{user_id} — {prefix}")
+    text = "Список префиксов:\n" + "\n".join(lines)
+    bot.reply_to(msg, text)
+
+@bot.message_handler(commands=['clearprefix'])
+def clearprefix(msg):
+    """Снять префикс"""
+    if not is_admin(msg.from_user.id):
+        return bot.reply_to(msg, "Нет прав.")
+    if not msg.reply_to_message:
+        return bot.reply_to(msg, "Ответьте на сообщение пользователя.")
+    user_id = msg.reply_to_message.from_user.id
+    if user_id in prefixes:
+        prefixes.pop(user_id)
+        bot.reply_to(msg, "Префикс снят.")
+    else:
+        bot.reply_to(msg, "У этого пользователя нет префикса.")
+
 if __name__ == "__main__":
     bot.infinity_polling()
