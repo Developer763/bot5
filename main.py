@@ -59,12 +59,38 @@ def mute(msg):
     if not msg.reply_to_message:
         return bot.reply_to(msg, "Ответьте на сообщение пользователя.")
     user_id = msg.reply_to_message.from_user.id
-    muted.add(user_id)
+    muted.add(user_id) 
     try:
         bot.restrict_chat_member(msg.chat.id, user_id, permissions=types.ChatPermissions(can_send_messages=False))
     except Exception:
         pass
     bot.reply_to(msg, f"Пользователь @{msg.reply_to_message.from_user.username} замьючен.")
+
+@bot.message_handler(commands=['unmute'])
+def unmute(msg):
+    if not is_admin(msg.from_user.id):
+        return bot.reply_to(msg, "Нет прав.")
+    if not msg.reply_to_message:
+        return bot.reply_to(msg, "Ответьте на сообщение пользователя.")
+    user_id = msg.reply_to_message.from_user.id
+    muted_users.discard(user_id)
+    try:
+        # возвращаем все разрешения пользователю
+        bot.restrict_chat_member(
+            msg.chat.id,
+            user_id,
+            permissions=types.ChatPermissions(
+                can_send_messages=True,
+                can_send_media_messages=True,
+                can_send_polls=True,
+                can_send_other_messages=True,
+                can_add_web_page_previews=True,
+                can_change_info=True,
+                can_invite_users=True,
+                can_pin_messages=True
+            )
+        )
+    except Exception as e:
 
 @bot.message_handler(commands=['warn'])
 def warn(msg):
