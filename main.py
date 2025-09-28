@@ -1,6 +1,9 @@
 import telebot
 from telebot import types
 import os
+from aiogram import types
+from aiogram.filters import Command, CommandObject
+from aiogram.enums import ChatMemberStatus
 
 TOKEN = os.getenv("BOT_TOKEN")
 bot = telebot.TeleBot(TOKEN)
